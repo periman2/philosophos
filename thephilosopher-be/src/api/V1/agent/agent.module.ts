@@ -1,8 +1,8 @@
 import { Module } from "@nestjs/common";
-import { SeedService } from "./seed.service";
 import { SupabaseModule } from "src/common/supabase";
 import { LangchainModule } from "src/common/langchain/langchain.module";
 import { ConfigModule } from "@nestjs/config";
+import { AgentService } from "./agent.service";
 
 @Module({
     imports: [
@@ -11,11 +11,8 @@ import { ConfigModule } from "@nestjs/config";
         LangchainModule
     ],
     providers: [
-        SeedService
-    ],
-    exports: [
-        SeedService
+        AgentService
     ]
 })
-export class SeedModule {
+export class AgentModule {
 }

@@ -9,46 +9,110 @@ export type Json =
 export interface Database {
   public: {
     Tables: {
-      goals: {
+      embeddings: {
         Row: {
-          created_at: string | null
-          description: string
+          content: string
+          content_length: number
+          created_at: string
+          embedding: string
           id: string
-          name: string
+          metadata: Json | null
         }
         Insert: {
-          created_at?: string | null
-          description: string
-          id: string
-          name: string
+          content: string
+          content_length?: number
+          created_at?: string
+          embedding: string
+          id?: string
+          metadata?: Json | null
         }
         Update: {
-          created_at?: string | null
-          description?: string
+          content?: string
+          content_length?: number
+          created_at?: string
+          embedding?: string
           id?: string
-          name?: string
+          metadata?: Json | null
         }
         Relationships: []
       }
+      goals: {
+        Row: {
+          craft_insight_temperature: number
+          created_at: string | null
+          description: string
+          id: string
+          meditative_process_temperature: number
+          name: string
+          organize_ideas_match_count: number
+          organize_ideas_resource_similarity: number
+          organize_ideas_temperature: number
+        }
+        Insert: {
+          craft_insight_temperature?: number
+          created_at?: string | null
+          description: string
+          id?: string
+          meditative_process_temperature?: number
+          name: string
+          organize_ideas_match_count?: number
+          organize_ideas_resource_similarity?: number
+          organize_ideas_temperature?: number
+        }
+        Update: {
+          craft_insight_temperature?: number
+          created_at?: string | null
+          description?: string
+          id?: string
+          meditative_process_temperature?: number
+          name?: string
+          organize_ideas_match_count?: number
+          organize_ideas_resource_similarity?: number
+          organize_ideas_temperature?: number
+        }
+        Relationships: []
+      }
+      insight_embeddings: {
+        Row: {
+          embedding_id: string
+          insight_id: string
+        }
+        Insert: {
+          embedding_id: string
+          insight_id: string
+        }
+        Update: {
+          embedding_id?: string
+          insight_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "insight_embeddings_embedding_id_fkey"
+            columns: ["embedding_id"]
+            referencedRelation: "embeddings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "insight_embeddings_insight_id_fkey"
+            columns: ["insight_id"]
+            referencedRelation: "insights"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       insights: {
         Row: {
-          content: string
           created_at: string | null
-          embedding: string
           goal_id: string | null
           id: string
         }
         Insert: {
-          content: string
           created_at?: string | null
-          embedding: string
           goal_id?: string | null
           id?: string
         }
         Update: {
-          content?: string
           created_at?: string | null
-          embedding?: string
           goal_id?: string | null
           id?: string
         }
@@ -61,48 +125,80 @@ export interface Database {
           }
         ]
       }
-      prompts: {
+      prompt_templates: {
         Row: {
-          content: string
           created_at: string | null
+          goal_id: string | null
           id: string
-          name: string
+          organize_resource_ideas_summarize_prompt: string | null
+          organize_resource_ideas_system_prompt: string | null
         }
         Insert: {
-          content: string
           created_at?: string | null
-          id: string
-          name: string
+          goal_id?: string | null
+          id?: string
+          organize_resource_ideas_summarize_prompt?: string | null
+          organize_resource_ideas_system_prompt?: string | null
         }
         Update: {
-          content?: string
           created_at?: string | null
+          goal_id?: string | null
           id?: string
-          name?: string
+          organize_resource_ideas_summarize_prompt?: string | null
+          organize_resource_ideas_system_prompt?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "prompt_templates_goal_id_fkey"
+            columns: ["goal_id"]
+            referencedRelation: "goals"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      text_resource_segment_embeddings: {
+        Row: {
+          embedding_id: string
+          text_resource_segment_id: string
+        }
+        Insert: {
+          embedding_id: string
+          text_resource_segment_id: string
+        }
+        Update: {
+          embedding_id?: string
+          text_resource_segment_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "text_resource_segment_embeddings_embedding_id_fkey"
+            columns: ["embedding_id"]
+            referencedRelation: "embeddings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "text_resource_segment_embeddings_text_resource_segment_id_fkey"
+            columns: ["text_resource_segment_id"]
+            referencedRelation: "text_resource_segments"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       text_resource_segments: {
         Row: {
-          content: string
           created_at: string
-          embedding: string
           id: string
           index: number
           text_resource_id: string
         }
         Insert: {
-          content: string
           created_at?: string
-          embedding: string
           id?: string
           index: number
           text_resource_id: string
         }
         Update: {
-          content?: string
           created_at?: string
-          embedding?: string
           id?: string
           index?: number
           text_resource_id?: string
@@ -148,7 +244,18 @@ export interface Database {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      match_text_resource_segments: {
+        Args: {
+          query_embedding: string
+          match_threshold: number
+          match_count: number
+        }
+        Returns: {
+          id: string
+          content: string
+          similarity: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

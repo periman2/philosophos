@@ -1,9 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { Supabase } from "src/common/supabase";
-import { v1 } from "uuid";
-import * as stream from 'stream';
 import { LangchainChatGPTService } from "src/common/langchain/langchain.chatgpt.service";
-import { Author, Book, BooksResponse } from "./dto/seed.types";
+import { Book, BooksResponse } from "./dto/seed.types";
 import axios from 'axios'
 import { Timeout } from "@nestjs/schedule";
 import { ConfigService } from "@nestjs/config";
@@ -17,156 +15,115 @@ export class SeedService {
         private readonly configService: ConfigService
     ) { }
 
-    private readonly gpt = 'gpt-4-32k';
     private readonly logger = new Logger(SeedService.name);
 
+    // @Timeout(1000)//Only uncomment when we want to seed the database from localhost.
     async load_resources() {
-        try {
 
-            const base_url = this.configService.get("GUTENDEX_BASE_URL");
-            const max_books = parseInt(this.configService.get("MAX_BOOKS_TO_SEED"))
+        const base_url = this.configService.get("GUTENDEX_BASE_URL");
+        const max_books = parseInt(this.configService.get("MAX_BOOKS_TO_SEED"))
 
-            console.log("Starting to load books")
+        this.logger.log("Starting to load books")
 
-            const books_endpoint = `${base_url}books?copyright=false&languages=en&mime_type=text&topic=philosophy`;
-            const filter_format = 'text/plain';
+        const books_endpoint = `${base_url}books?copyright=false&languages=en&mime_type=text&topic=philosophy`;
+        const filter_format = 'text/plain';
 
-            const all_books: Book[] = [];
-            const all_authors: Author[] = [];
+        let all_books: Book[] = [];
 
-            async function fetchNextBooks(url: string) {
-                const res = await axios.get<BooksResponse>(url);
-                //filtering only the ones with desires format:
-                res.data.results = res.data.results
-                    .filter(b => b.formats[filter_format] && b.subjects.find(s => s.toLowerCase().indexOf('fiction') === -1))
-                return res.data
-            }
-
-            let route = books_endpoint;
-
-            while (all_books.length < max_books) {
-                const data = await fetchNextBooks(route)
-                if (!data.next) break;
-                all_books.push(...data.results)
-                route = data.next;
-            }
-
-            if (all_books.length > max_books)
-                all_books.splice(max_books, all_books.length - 1)
-
-            for (let i = 0; i < all_books.length; i++) {
-                const b = all_books[i]
-                b.authors.forEach(author => {
-                    if (!all_authors.find(a => a.name === author.name))
-                        all_authors.push(author)
-                })
-                // b.content = (await axios.get(b.formats['text/plain'], { responseType: 'text' })).data
-            }
-
-            console.log('all books are : ', 
-            all_books.length, 
-            all_books.map(b => b.title))
-            return { all_books }
-
-        } catch (ex) {
-            console.error(ex)
+        async function fetchNextBooks(url: string) {
+            const res = await axios.get<BooksResponse>(url);
+            //filtering only the ones with desires format:
+            res.data.results = res.data.results
+                .filter(b => b.formats[filter_format] && b.subjects.find(s => s.toLowerCase().indexOf('fiction') === -1))
+            return res.data
         }
-    }
 
-    @Timeout(1000) //start this method a second after the server is started
-    async execute() {
+        let route = books_endpoint;
+
+        while (all_books.length < max_books) {
+            const data = await fetchNextBooks(route)
+            if (!data.next) break;
+            all_books.push(...data.results)
+            route = data.next;
+        }
+
+        if (all_books.length > max_books)
+            all_books.splice(max_books, all_books.length - 1)
 
         const client = this.supabase.getClient();
 
-        // try {
+        const { data: all_saved_books } = await client.from('text_resources').select('title').lt('created_at', new Date().toISOString()).throwOnError()
+        all_books = all_books.filter(b => !all_saved_books.map(sb => sb.title).includes(b.title))
 
-        //     const { data: ai } = await client.from('ai_models').select('*').eq('name', this.gpt).limit(1).single().throwOnError()
+        for (let i = 0; i < all_books.length; i++) {
+            const b = all_books[i]
+            this.logger.log('parsing text_resource: ', b.title)
+            const author_names = b.authors.map(a => a.name).join(", ")
 
-        //     if (ai)
-        //         ai.api_key = decrypt(ai.api_key as string)
+            const { data: text_resource, error } = await client.from('text_resources').upsert({
+                author_names,
+                gutendex_id: b.id,
+                title: b.title
+            }, { onConflict: 'title' }).select('id').single().throwOnError()
 
-        //     else throw new Error(`Cannot seed the database without ${this.gpt}`)
+            const content = (await axios.get(b.formats['text/plain'], { responseType: 'text' })).data
+            const segments = await this.langchainChatGPTService.splitLargeText(content, 1500, 500)
 
-        //     let all_books: Book[] = [];
-        //     let all_authors: Author[] = [];
+            const embeddings: number[][] = []
 
-        //     if (!id) {
-        //         const { all_authors: a_a, all_books: a_b } = await load_books_and_authors({ max_books: 2 })
-        //         all_books = a_b
-        //         all_authors = a_a
-        //     } else {
-        //         const { all_authors: a_a, all_books: a_b } = await load_book_from_id({ id })
-        //         all_books = a_b
-        //         all_authors = a_a
-        //     }
+            const embed_increment = 80;
+            for (let sc = 0; sc < segments.length; sc += embed_increment) {
+                const segment_segment = segments.slice(sc, sc + embed_increment);
+                embeddings.push(...await this.langchainChatGPTService.makeEmbeddingsForTexts(segment_segment, this.configService.get("EMBEDDING_MODEL")))
+            }
 
-        //     const storage_of_books = await this.getOrCreateBooksStorage(client);
+            const db_save_increment = 8;
+            for (let si = 0; si < segments.length; si += db_save_increment) {
+                const segment_segment = segments.slice(si, si + db_save_increment);
+                
+                await Promise.all(
+                    segment_segment
+                        .map((s, sindex) => {
+                            return {
+                                s,
+                                emb: embeddings[sindex],
+                                sindex: si + sindex
+                            }
+                        })
+                        .map(async ({ emb, s, sindex }) => {
 
-        //     /** Retrieve the storage for books from the database or create it! TODO: create if not exists */
-        //     const db_authors = await this.upsertAuthors(client, all_authors)
+                            const embedding = emb;
 
-        //     for (let book_indx = 0; book_indx < all_books.length; book_indx++) {
+                            const { data: existing_segment } = await client
+                                .from('text_resource_segments')
+                                .select("id")
+                                .eq("index", sindex)
+                                .eq('text_resource_id', text_resource.id)
+                                .limit(1)
+                                .single()
 
-        //         const book = all_books[book_indx]
+                            if (!existing_segment) {
+                                const { data: trs } = await client.from('text_resource_segments').insert({
+                                    index: sindex,
+                                    text_resource_id: text_resource.id
+                                }).select('id').single().throwOnError()
+                                const { data: emb_res } = await client.from('embeddings').insert({
+                                    content: s,
+                                    embedding: embedding as any,
+                                    content_length: s.length
+                                }).select('id').single().throwOnError()
+                                await client.from('text_resource_segment_embeddings').insert({
+                                    embedding_id: emb_res.id,
+                                    text_resource_segment_id: trs.id
+                                }).throwOnError()
+                                this.logger.log(`created ${sindex} embedding in db for book ${b.title}`)
+                            }
+                        }))
 
-        //         this.logger.log("Parsing book : ", book.title)
+            }
+        }
 
-        //         const storage_folder = await this.getOrCreateStorageFolder(client, storage_of_books.id, book)
-        //         const book_path = `${book.title}.txt`
-        //         const text_stream = this.getTextStream(book.content);
-        //         await this.bunnyService.uploadFile(storage_of_books?.name as string, storage_folder?.url as string, book_path, text_stream, decrypt(storage_of_books?.password_hashed as string))
-
-        //         const book_storage_file = await this.getOrCreateBookStorageFile(client, storage_folder?.id as string, book)
-        //         const db_book = await this.getOrCreateBook(client, storage_folder?.id as string, book)
-        //         const book_storage_folder = await this.getOrCreateBookStorageFolder(client, storage_folder?.id as string, db_book?.id as string, book)
-
-        //         const book_segment_documents = await this.langchainChatGPTService.splitLargeText(book.content, 1500); //TODO: add to seed options model.
-
-        //         const book_embeddings = await this.langchainChatGPTService.makeEmbeddingsForTexts(book_segment_documents, ai.embeddings_name, ai.api_key as string)
-
-        //         for (let author_index = 0; author_index < db_authors.length; author_index++) {
-        //             const a = db_authors[author_index];
-        //             if (book.authors.find(at => at.name === a.name))
-        //                 await client.from('book_authors').upsert({
-        //                     book_id: db_book?.id as string,
-        //                     author_id: a.id
-        //                 })
-        //             else continue;
-        //         }
-
-        //         for (let si = 0; si < book_segment_documents.length; si++) {
-
-        //             const segment = book_segment_documents[si]
-        //             const embedding = book_embeddings[si]
-
-        //             console.log('creating embeddding' + si)
-
-        //             const { data } = await client.from('embeddings').upsert({
-        //                 content: segment,
-        //                 length: segment.length,
-        //                 metadata: '',
-        //                 name: `${book.title}${si}`
-        //             }, { onConflict: 'name' }).select().single()
-
-        //             await client.from('embedding_vectors_1536').upsert({
-        //                 ai_model_id: ai.id,
-        //                 embedding_id: data?.id as string,
-        //                 vector: embedding as any
-        //             }, { onConflict: 'embedding_id' })
-
-        //             await client.from('book_segments').upsert({
-        //                 book_id: db_book?.id as string,
-        //                 embedding_id: data?.id as string,
-        //                 type: BookSegmentTypes.Text,
-        //                 index: si
-        //             }, { onConflict: 'embedding_id' })
-        //         }
-        //     }
-
-        // console.log("Finished seeding the database!")
-        // } catch (ex) {
-        //     this.logger.error(ex)
-        //     throw ex;
-        // }
+        return { all_books }
     }
+
 }
