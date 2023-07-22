@@ -80,8 +80,6 @@ export class AgentService {
 
             const insights = await this.craftInsights(analysis_result, latest_goal)
 
-            this.logger.log(`\n\n\n Insights :
-            ${insights}`)
 
             const [insight_embedding] = await this.langchainChatGPTService.makeEmbeddingsForTexts([insights], this.configService.get("EMBEDDING_MODEL"))
 
@@ -100,6 +98,9 @@ export class AgentService {
                 embedding_id: db_embedding.id,
                 insight_id: db_insight.id
             })
+            
+            this.logger.log(`\n\n\n Insights :
+            ${insights}`)
 
             setTimeout(this.execute.bind(this), 5000);
         } catch (ex) {

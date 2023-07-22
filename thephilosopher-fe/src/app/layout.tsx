@@ -1,6 +1,12 @@
+import QueryClientProviderRegistration from '@/utils/query-provider'
 import './globals.css'
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
+import Image from 'next/image'
+import { Nanum_Myeongjo } from "@next/font/google"
+import cn from 'classnames'
+
+const nanum = Nanum_Myeongjo({ weight: "400", subsets: ['latin'] })
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -15,7 +21,30 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>{children}</body>
+      <head>
+        <link
+          href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body className={cn(nanum.className)}>
+        <QueryClientProviderRegistration>
+
+          <main className="flex flex-col min-h-screen items-center justify-between p-18 overflow-hidden">
+            <div className="relative flex place-items-center">
+              <Image
+                className="relative"
+                src="/the_philosopher_logo.png"
+                alt="The Philosopher"
+                width={280}
+                height={280}
+                priority
+              />
+            </div>
+            {children}
+          </main>
+        </QueryClientProviderRegistration>
+      </body>
     </html>
   )
 }
