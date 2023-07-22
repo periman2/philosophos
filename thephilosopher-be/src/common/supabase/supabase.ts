@@ -29,8 +29,6 @@ export class Supabase {
       }
     );
 
-    this.logger.log('auth has been set!');
-
     return this.clientInstance;
   }
 }

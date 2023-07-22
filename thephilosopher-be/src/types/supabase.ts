@@ -100,6 +100,34 @@ export interface Database {
           }
         ]
       }
+      insight_text_resources: {
+        Row: {
+          insight_id: string
+          text_resource_id: string
+        }
+        Insert: {
+          insight_id: string
+          text_resource_id: string
+        }
+        Update: {
+          insight_id?: string
+          text_resource_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "insight_text_resources_insight_id_fkey"
+            columns: ["insight_id"]
+            referencedRelation: "insights"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "insight_text_resources_text_resource_id_fkey"
+            columns: ["text_resource_id"]
+            referencedRelation: "text_resources"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       insights: {
         Row: {
           created_at: string | null
@@ -220,6 +248,7 @@ export interface Database {
           gutendex_id: number | null
           id: string
           title: string
+          url: string | null
         }
         Insert: {
           author_names?: string | null
@@ -228,6 +257,7 @@ export interface Database {
           gutendex_id?: number | null
           id?: string
           title: string
+          url?: string | null
         }
         Update: {
           author_names?: string | null
@@ -236,6 +266,7 @@ export interface Database {
           gutendex_id?: number | null
           id?: string
           title?: string
+          url?: string | null
         }
         Relationships: []
       }
@@ -244,6 +275,12 @@ export interface Database {
       [_ in never]: never
     }
     Functions: {
+      delete_embeddings_by_text_resource_id: {
+        Args: {
+          p_text_resource_id: string
+        }
+        Returns: undefined
+      }
       match_text_resource_segments: {
         Args: {
           query_embedding: string

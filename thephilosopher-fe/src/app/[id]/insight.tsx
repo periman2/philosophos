@@ -5,7 +5,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 
 export default function Insight({ id }: { id: string }) {
+
     const router = useRouter();
+
     const { data, isLoading } = useQuery({
         queryFn: async () => {
             const { data } = await supabase.from('insights').select('id, embeddings(id, content)').eq('id', id).limit(1).single().throwOnError();
