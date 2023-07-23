@@ -1,5 +1,7 @@
 'use client';
 
+import PhButton from "@/components/ph-button";
+import TextResource from "@/components/text-resource";
 import supabase from "@/utils/supabase";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
@@ -10,7 +12,7 @@ export default function Insight({ id }: { id: string }) {
 
     const { data, isLoading } = useQuery({
         queryFn: async () => {
-            const { data } = await supabase.from('insights').select('id, embeddings(id, content)').eq('id', id).limit(1).single().throwOnError();
+            const { data } = await supabase.from('insights').select('id, created_at, embeddings(id, content), text_resources(id, title, author_names, url)').eq('id', id).limit(1).single().throwOnError();
             return data;
         },
         queryKey: ['insight', id]
@@ -24,9 +26,27 @@ export default function Insight({ id }: { id: string }) {
 
     return (
         <>
-            <button onClick={() => {
+            <PhButton onClick={() => {
                 router.push('/')
-            }} className="btn bg-amber-50/20 hover:bg-amber-100/50 transition duration-300 hover:scale-105 text-white/80">Back to Insights</button>
+            }}>
+                Back to Insights
+            </PhButton>
+            <PhButton onClick={() => (window as any).resources_modal.showModal()}>
+                Show insight resources
+            </PhButton>
+            <dialog id="resources_modal" className="modal">
+                <form method="dialog" className="modal-box h-96">
+                    <div className="h-60 overflow-y-auto">
+                        {data?.text_resources.map(r => <TextResource title={r.title} author_names={r.author_names as string} id={r.id} url={r.url as string} key={r.id} />)}
+                    </div>
+                    <div className="modal-action">
+                        <PhButton>
+                            Close
+                        </PhButton>
+                    </div>
+                </form>
+            </dialog>
+            <div>Created at: {data?.created_at}</div>
             <div className="relative w-full max-w-3xl mx-auto bg-opacity-20 bg-gradient-to-b px-6 rounded-lg shadow-lg overflow-hidden">
                 <div className="pl-14 p-b-3 pr-14 pt-14 space-y-6 prose max-h-96 overflow-y-auto">
                     <p className="text-white-200/60 font-thin whitespace-break-spaces">
