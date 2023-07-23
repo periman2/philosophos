@@ -30,9 +30,7 @@ export class LangchainChatGPTService {
     getChatChain({ model, systemMessageTemplate, humanMessageTemplate, temperature }: { model: string, systemMessageTemplate: string, humanMessageTemplate: string, temperature: number }) {
         const chat = new ChatOpenAI({ temperature, modelName: model });
         const chat_prompt = ChatPromptTemplate.fromPromptMessages([
-            SystemMessagePromptTemplate.fromTemplate(
-                systemMessageTemplate
-            ),
+            SystemMessagePromptTemplate.fromTemplate(systemMessageTemplate),
             HumanMessagePromptTemplate.fromTemplate(humanMessageTemplate),
         ])
 

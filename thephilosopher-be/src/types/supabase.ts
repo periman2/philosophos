@@ -36,6 +36,37 @@ export interface Database {
         }
         Relationships: []
       }
+      goal_settings: {
+        Row: {
+          created_at: string | null
+          goal_id: string
+          id: string
+          settings_base: Json
+          settings_dynamic: Json
+        }
+        Insert: {
+          created_at?: string | null
+          goal_id: string
+          id?: string
+          settings_base: Json
+          settings_dynamic: Json
+        }
+        Update: {
+          created_at?: string | null
+          goal_id?: string
+          id?: string
+          settings_base?: Json
+          settings_dynamic?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goal_settings_goal_id_fkey"
+            columns: ["goal_id"]
+            referencedRelation: "goals"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       goals: {
         Row: {
           craft_insight_temperature: number
@@ -147,37 +178,6 @@ export interface Database {
         Relationships: [
           {
             foreignKeyName: "insights_goal_id_fkey"
-            columns: ["goal_id"]
-            referencedRelation: "goals"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      prompt_templates: {
-        Row: {
-          created_at: string | null
-          goal_id: string | null
-          id: string
-          organize_resource_ideas_summarize_prompt: string | null
-          organize_resource_ideas_system_prompt: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          goal_id?: string | null
-          id?: string
-          organize_resource_ideas_summarize_prompt?: string | null
-          organize_resource_ideas_system_prompt?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          goal_id?: string | null
-          id?: string
-          organize_resource_ideas_summarize_prompt?: string | null
-          organize_resource_ideas_system_prompt?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "prompt_templates_goal_id_fkey"
             columns: ["goal_id"]
             referencedRelation: "goals"
             referencedColumns: ["id"]
