@@ -35,8 +35,8 @@ export default function Insight({ id }: { id: string }) {
             <PhButton onClick={() => (window as any).resources_modal.showModal()}>
                 Show insight resources
             </PhButton>
-            <dialog id="resources_modal" className="modal">
-                <form method="dialog" className="modal-box h-96">
+            <dialog id="resources_modal" className="modal ">
+                <form method="dialog" className="modal-box h-96 bg-zinc-900">
                     <div className="h-60 overflow-y-auto">
                         {data?.text_resources.map(r => <TextResource title={r.title} author_names={r.author_names as string} id={r.id} url={r.url as string} key={r.id} />)}
                     </div>
