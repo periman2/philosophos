@@ -88,7 +88,7 @@ export default function Insights() {
                 </div>
             </div>
             <dialog id="goal_modal" className="modal">
-                <form method="dialog" className="modal-box h-96 text-gray-100/80">
+                <form method="dialog" className="modal-box h-96 text-gray-100/80  bg-zinc-900">
                     <div className="h-52 overflow-y-auto  whitespace-break-spaces">
                         <p>
                             {goal?.name}
