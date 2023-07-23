@@ -3,7 +3,7 @@ import { Supabase } from "src/common/supabase";
 import { LangchainChatGPTService } from "src/common/langchain/langchain.chatgpt.service";
 import { ConfigService } from "@nestjs/config";
 import { SupabaseClient } from "@supabase/supabase-js";
-import { Database } from "src/types/supabase";
+import { Database, Json } from "src/types/supabase";
 import { DBTableRow } from "src/types/db";
 import { Timeout } from "@nestjs/schedule";
 import { AgentSettings } from "./interfaces/agent.settings.interface";
@@ -85,37 +85,114 @@ export class AgentService {
 
             const [insight_embedding] = await this.langchainChatGPTService.makeEmbeddingsForTexts([insights], this.configService.get("EMBEDDING_MODEL"))
 
-            //TODO: save this in a db function transaction
-            const { data: db_embedding } = await client.from('embeddings').insert({
-                content: insights,
-                embedding: insight_embedding as any,
-                content_length: insights.length
-            }).select("id").single().throwOnError()
-
-            const { data: db_insight } = await client.from('insights').insert({
-                goal_id: current_goal.id,
-            }).select('id').single().throwOnError();
-
-            await client.from('insight_embeddings').insert({
-                embedding_id: db_embedding.id,
-                insight_id: db_insight.id
+            const { data: similarInsight } = await client.rpc('match_insight_embeddings', {
+                match_count: 1,
+                match_threshold: dynamic_settings.existing_insight_match_threshold,
+                query_embedding: insight_embedding as any
             }).throwOnError()
 
-            await client.from('insight_text_resources').upsert(text_resource_segments
-                .flatMap(r => r.text_resources)
-                .map(t => t.id)
-                .filter((v, i, arr) => arr.indexOf(v) === i) //keep only unique values
-                .map(t => ({
-                    text_resource_id: t,
+            if (similarInsight && similarInsight.length > 0) {
+
+                const mostSimilar = similarInsight[0];
+
+                this.logger.warn('Found a similar insight with similarity: ' + mostSimilar.similarity)
+
+                if (dynamic_settings.failed_run_times >= dynamic_settings.max_runs_before_strategy_changes) {
+
+                    const new_strategy = await this.changeStrategy(current_goal, dynamic_settings);
+
+                    this.logger.log('Philosophos decides to change strategy now.')
+                    this.logger.log('new_strategy: ', new_strategy)
+
+                    const new_settings: AgentSettings = {
+                        ...dynamic_settings,
+                        ...{
+                            analysis_prompt: base_settings.analysis_inspiration_seeking_prompt,
+                            failed_run_times: 0,
+                            strategy: new_strategy
+                        }
+                    }
+
+                    await client.from('goal_settings').update({
+                        settings_dynamic: { ...new_settings }
+                    }).eq('id', current_goal.goal_settings.id).throwOnError()
+                } else {
+                    const new_settings: AgentSettings = {
+                        ...dynamic_settings,
+                        ...{
+                            analysis_prompt: base_settings.analysis_inspiration_seeking_prompt,
+                            failed_run_times: dynamic_settings.failed_run_times + 1
+                        }
+                    }
+
+                    await client.from('goal_settings').update({
+                        settings_dynamic: { ...new_settings }
+                    }).eq('id', current_goal.goal_settings.id).throwOnError()
+                }
+
+            } else {
+
+                const new_settings = {
+                    ...dynamic_settings,
+                    ...{
+                        analysis_prompt: base_settings.analysis_deep_dive_prompt,
+                        failed_run_times: 0
+                    }
+                }
+
+                await client.from('goal_settings').update({
+                    settings_dynamic: { ...new_settings }
+                }).eq('id', current_goal.goal_settings.id).throwOnError()
+
+                //TODO: save this in a db function transaction
+                const { data: db_embedding } = await client.from('embeddings').insert({
+                    content: insights,
+                    embedding: insight_embedding as any,
+                    content_length: insights.length
+                }).select("id").single().throwOnError()
+
+                const { data: db_insight } = await client.from('insights').insert({
+                    goal_id: current_goal.id,
+                }).select('id').single().throwOnError();
+
+                await client.from('insight_embeddings').insert({
+                    embedding_id: db_embedding.id,
                     insight_id: db_insight.id
-                })), { onConflict: 'insight_id, text_resource_id' }).throwOnError()
+                }).throwOnError()
 
-            this.logger.log('Philosopher finished an insight.')
+                await client.from('insight_text_resources').upsert(text_resource_segments
+                    .flatMap(r => r.text_resources)
+                    .map(t => t.id)
+                    .filter((v, i, arr) => arr.indexOf(v) === i) //keep only unique values
+                    .map(t => ({
+                        text_resource_id: t,
+                        insight_id: db_insight.id
+                    })), { onConflict: 'insight_id, text_resource_id' }).throwOnError()
 
-            // setTimeout(this.execute.bind(this), this.agent_interval_seconds);
+                this.logger.log('Philosophos finished an insight.')
+            }
+
+            setTimeout(this.execute.bind(this), this.agent_interval_seconds);
         } catch (ex) {
             this.logger.error(ex);
         }
+    }
+
+    private async changeStrategy(current_goal: DBTableRow<'goals'>, settings: AgentSettings) {
+
+        const change_strategy_chain = await this.langchainChatGPTService.getChatChain({
+            temperature: settings.change_strategy_temperature,
+            model: this.configService.get('OPENAI_CHAT_MODEL'),
+            systemMessageTemplate: settings.change_strategy_system_prompt,
+            humanMessageTemplate: settings.change_strategy_prompt
+        })
+
+        const { text: new_strategy } = await change_strategy_chain.call({
+            goal_description: `${current_goal.description}\n${settings.strategy}`
+        })
+
+        return new_strategy
+
     }
 
     private async craftInsights(analysis_result: string, current_goal: DBTableRow<'goals'>, settings: AgentSettings) {
@@ -123,12 +200,12 @@ export class AgentService {
         const craft_insight_process_chain = this.langchainChatGPTService.getChatChain({
             model: this.configService.get('OPENAI_CHAT_MODEL'),
             systemMessageTemplate: settings.insights_system_prompt,
-            humanMessageTemplate: settings.insights_prompt,
+            humanMessageTemplate: settings.insights_prompt + "\nPhilosophical analysis: \"{analysis}\"",
             temperature: current_goal.meditative_process_temperature
         })
 
         const { text: insight } = await craft_insight_process_chain.call({
-            goal_description: current_goal.description,
+            goal_description: `${current_goal.description}\n${settings.strategy}`,
             analysis: analysis_result
         })
 
@@ -143,12 +220,12 @@ export class AgentService {
         const craft_meditative_process_chain = this.langchainChatGPTService.getChatChain({
             model: this.configService.get('OPENAI_CHAT_MODEL'),
             systemMessageTemplate: settings.analysis_system_prompt,
-            humanMessageTemplate: settings.analysis_prompt,
+            humanMessageTemplate: settings.analysis_prompt + "\nIdeas: '{ideas}'",
             temperature: current_goal.meditative_process_temperature
         })
 
         const { text: meditation_result } = await craft_meditative_process_chain.call({
-            goal_description: current_goal.description,
+            goal_description: `${current_goal.description}\n${settings.strategy}`,
             ideas: organized_ideas
         })
 
@@ -166,9 +243,9 @@ export class AgentService {
             humanMessageTemplate: settings.organize_ideas_summarize_prompt,
             temperature: settings.organize_ideas_temperature
         })
-        
+
         const { text: organized_ideas } = await organize_resource_ideas_chain.call({
-            goal_description: current_goal.description,
+            goal_description: `${current_goal.description}\n${settings.strategy}`,
             ideas: results.map((r, i) => `IDEA ${i + 1}:${r}\n`).join("")
         })
 

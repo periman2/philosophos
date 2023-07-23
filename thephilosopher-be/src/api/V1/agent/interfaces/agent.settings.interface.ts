@@ -12,6 +12,13 @@ export interface AgentSettings {
     insights_system_prompt: string;
     insights_prompt: string;
     insights_temperature: number;
-    runs_made?: number
-    runs_set?: number
+    existing_insight_match_threshold: number;
+    analysis_inspiration_seeking_prompt: string;
+    analysis_deep_dive_prompt: string;
+    failed_run_times: number;
+    max_runs_before_strategy_changes: number;
+    change_strategy_prompt: string;
+    change_strategy_system_prompt: string;
+    strategy: string;
+    change_strategy_temperature: number;
 }

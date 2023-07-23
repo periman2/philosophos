@@ -30,14 +30,14 @@ export default function RootLayout({
       <body className={cn(nanum.className)}>
         <QueryClientProviderRegistration>
 
-          <main className="flex flex-col min-h-screen items-center justify-between p-18 overflow-hidden">
+          <main className="flex flex-col min-h-screen h-screen items-center justify-between p-5 overflow-hidden">
             <div className="relative flex place-items-center">
               <Image
                 className="relative"
                 src="/the_philosopher_logo.png"
                 alt="The Philosopher"
-                width={280}
-                height={280}
+                width={240}
+                height={240}
                 priority
               />
             </div>

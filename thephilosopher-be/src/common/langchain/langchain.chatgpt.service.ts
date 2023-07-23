@@ -40,6 +40,7 @@ export class LangchainChatGPTService {
             verbose: false
         });
     }
+
     private getOpenAIEmbeddings(model: string) {
         return new OpenAIEmbeddings({ modelName: model }); //TODO: add to config
     }
