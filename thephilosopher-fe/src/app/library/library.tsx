@@ -30,7 +30,9 @@ export default function Library() {
         <div className="relative w-full max-w-3xl mx-auto bg-opacity-20 bg-gradient-to-b px-6 rounded-lg shadow-lg transition duration-300 hover:scale-105 overflow-hidden">
             <div className="pl-14 pr-14 pt-14 space-y-6 prose max-h-96 overflow-y-auto">
                 {!isLoading && data?.map(d =>
-                    <TextResource author_names={d.author_names as string} id={d.id} title={d.title} url={d.url as string} key={d.id} />
+                    <TextResource onClick={() => {
+                        window.open(d?.url as string, '_blank')
+                    }} author_names={d.author_names as string} id={d.id} title={d.title} url={d.url as string} key={d.id} />
                 )}
             </div>
         </div>

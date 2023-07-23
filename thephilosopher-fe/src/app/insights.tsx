@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 export default function Insights() {
+
     const router = useRouter();
 
     const pageSize = 5;
@@ -56,7 +57,7 @@ export default function Insights() {
     useEffect(() => {
         const current_length = insights?.pages.flatMap(p => p).length || 0
         if (entry?.isIntersecting && count > current_length) fetchNextPage()
-    }, [entry, count])
+    }, [entry, count, insights, fetchNextPage])
 
     const insights_parsed = insights?.pages
         .flatMap(d => d)
@@ -65,23 +66,30 @@ export default function Insights() {
     return (
         <>
             <div className="w-full max-w-3xl text-center text-amber-200/60 text-sm font-thin line-clamp-3 whitespace-break-spaces">
-                <PhButton onClick={() => {
-                    router.push('/library')
-                }}>
-                    Library
-                </PhButton>
-                <PhButton onClick={() => {
-                    router.push('/about')
-                }}>
-                    About
-                </PhButton>
-                {goal && <PhButton onClick={() => (window as any).goal_modal.showModal()}>
-                    Current goal
-                </PhButton>}
+                <div className="join join-vertical sm:join-horizontal">
+                    <PhButton className="join-item" onClick={() => {
+                        router.push('/library')
+                    }}>
+                        Library
+                    </PhButton>
+                    <PhButton className="join-item" onClick={() => {
+                        router.push('/search')
+                    }}>
+                        Search Insights
+                    </PhButton>
+                    {goal && <PhButton onClick={() => (window as any).goal_modal.showModal()}>
+                        Current goal
+                    </PhButton>}
+                    <PhButton className="join-item" onClick={() => {
+                        router.push('/about')
+                    }}>
+                        About
+                    </PhButton>
+                </div>
             </div>
             <dialog id="goal_modal" className="modal">
                 <form method="dialog" className="modal-box h-96 text-gray-100/80">
-                    <div className="h-60 overflow-y-auto  whitespace-break-spaces">
+                    <div className="h-52 overflow-y-auto  whitespace-break-spaces">
                         <p>
                             {goal?.name}
                         </p>
@@ -100,7 +108,7 @@ export default function Insights() {
                     </div>
                 </form>
             </dialog>
-            <div className="w-full max-w-3xl pb-5 text-center text-gray-100/80 text-md font-thin">
+            <div className="w-full max-w-3xl pb-5 text-center text-gray-100/80 text-md font-thin lg:text-sm">
                 <p>Philosophos is thinking <span className="loading loading-ring loading-xs"></span></p>
                 <p>Insights manifest multiple times a day.</p>
             </div >

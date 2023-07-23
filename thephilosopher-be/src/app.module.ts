@@ -3,15 +3,17 @@ dotenv.config()
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { SeedModule } from './api/V1/seed/seed.module';
 import { ScheduleModule } from '@nestjs/schedule';
-import { AgentModule } from './api/V1/agent/agent.module';
+import { AgentModule } from './modules/agent/agent.module';
+import { SeedModule } from './modules/seed/seed.module';
+import { InsightsModule } from './api/V1/insights/insights.module';
 
 @Module({
   imports: [
     ScheduleModule.forRoot(),
     AgentModule,
-    SeedModule
+    SeedModule,
+    InsightsModule
   ],
   controllers: [AppController],
   providers: [AppService],
