@@ -19,7 +19,7 @@ export default function Page() {
         </p>
         <br />
         <p>
-            Philosophos has the ability to change the strategy of research when it knows it is "stuck" on the fly. It is constantly reading its database in order to understand if the new insights it produces are not too similar with the existing ones.
+            Philosophos has the ability to change the strategy of research when it knows it is &quot;stuck&quot; on the fly. It is constantly reading its database in order to understand if the new insights it produces are not too similar with the existing ones.
             The same principle applies to all the prompts and settings used to make it engage in the research.
         </p>
         <br />

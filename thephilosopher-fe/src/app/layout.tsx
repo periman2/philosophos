@@ -2,7 +2,7 @@ import QueryClientProviderRegistration from '@/utils/query-provider'
 import './globals.css'
 import type { Metadata } from 'next'
 import Image from 'next/image'
-import { Nanum_Myeongjo } from "@next/font/google"
+import { Nanum_Myeongjo } from "next/font/google"
 import cn from 'classnames'
 
 const nanum = Nanum_Myeongjo({ weight: "400", subsets: ['latin'] })
