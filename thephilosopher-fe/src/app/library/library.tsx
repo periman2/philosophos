@@ -13,7 +13,6 @@ export default function Library() {
     const { data, isLoading, error } = useQuery({
         queryFn: async () => {
             const { data } = await supabase.from('text_resources').select('id, title, author_names, url').throwOnError();
-            console.log('data are : ', data);
             return data;
         },
         queryKey: ['text_resource_list']
@@ -25,7 +24,7 @@ export default function Library() {
         <PhButton onClick={() => {
             router.push('/')
         }}>Back to Insights</PhButton>
-        <div className="text-amber-200/60 text-lg font-thin line-clamp-3 whitespace-break-spaces"   >
+        <div className="text-gray-100/80 text-md"   >
             Philosophos has read these {data?.length} books so far
         </div>
         <div className="relative w-full max-w-3xl mx-auto bg-opacity-20 bg-gradient-to-b px-6 rounded-lg shadow-lg transition duration-300 hover:scale-105 overflow-hidden">

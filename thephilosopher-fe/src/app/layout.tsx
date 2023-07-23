@@ -1,14 +1,11 @@
 import QueryClientProviderRegistration from '@/utils/query-provider'
 import './globals.css'
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
 import Image from 'next/image'
 import { Nanum_Myeongjo } from "@next/font/google"
 import cn from 'classnames'
 
 const nanum = Nanum_Myeongjo({ weight: "400", subsets: ['latin'] })
-
-const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'The Philosopher'

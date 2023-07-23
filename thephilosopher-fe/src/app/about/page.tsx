@@ -6,7 +6,7 @@ export default function Page() {
 
     const router = useRouter()
 
-    return <div className="m-7 p-7 flex flex-col items-center justify-start h-screen w-full max-w-3xl text-left text-amber-200/60 text-base font-thin overflow-y-auto">
+    return <div className="m-7 p-7 flex flex-col items-center justify-start h-screen w-full max-w-3xl text-left text-gray-10/60 text-base font-thin overflow-y-auto">
         <PhButton onClick={() => {
             router.push('/')
         }}>

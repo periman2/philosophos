@@ -2,6 +2,7 @@
 
 import PhButton from "@/components/ph-button";
 import TextResource from "@/components/text-resource";
+import { formatDateString } from "@/utils/datetime";
 import supabase from "@/utils/supabase";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
@@ -46,10 +47,10 @@ export default function Insight({ id }: { id: string }) {
                     </div>
                 </form>
             </dialog>
-            <div>Created at: {data?.created_at}</div>
+            <p className="ml-72∂">{formatDateString(data?.created_at as string)}</p>
             <div className="relative w-full max-w-3xl mx-auto bg-opacity-20 bg-gradient-to-b px-6 rounded-lg shadow-lg overflow-hidden">
                 <div className="pl-14 p-b-3 pr-14 pt-14 space-y-6 prose max-h-96 overflow-y-auto">
-                    <p className="text-white-200/60 font-thin whitespace-break-spaces">
+                    <p className="text-gray-100/80 font-thin whitespace-break-spaces">
                         {content}
                     </p>
                 </div>
