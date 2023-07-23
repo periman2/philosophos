@@ -294,6 +294,20 @@ export interface Database {
           similarity: number
         }[]
       }
+      match_insight_embeddings_based_on_goal_id: {
+        Args: {
+          input_goal_id: string
+          query_embedding: string
+          match_threshold: number
+          match_count: number
+        }
+        Returns: {
+          insight_id: string
+          embedding_id: string
+          content: string
+          similarity: number
+        }[]
+      }
       match_text_resource_segments: {
         Args: {
           query_embedding: string

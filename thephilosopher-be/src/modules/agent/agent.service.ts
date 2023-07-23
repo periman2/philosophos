@@ -21,7 +21,13 @@ export class AgentService {
     private readonly logger = new Logger(AgentService.name);
     private readonly agent_interval_seconds = parseInt(process.env.AGENT_INTERVAL_SECONDS);
 
-    // @Timeout(1000) //start this method a second after the server is started
+
+    @Timeout(1000) //start this method a second after the server is started
+    async repeatExecution() {
+        await this.execute();
+        setTimeout(this.execute.bind(this), this.agent_interval_seconds);
+    }
+
     async execute() {
         try {
 
@@ -85,7 +91,8 @@ export class AgentService {
 
             const [insight_embedding] = await this.langchainChatGPTService.makeEmbeddingsForTexts([insights], this.configService.get("EMBEDDING_MODEL"))
 
-            const { data: similarInsight } = await client.rpc('match_insight_embeddings', {
+            const { data: similarInsight } = await client.rpc('match_insight_embeddings_based_on_goal_id', {
+                input_goal_id: current_goal.id,
                 match_count: 1,
                 match_threshold: dynamic_settings.existing_insight_match_threshold,
                 query_embedding: insight_embedding as any
@@ -172,7 +179,6 @@ export class AgentService {
                 this.logger.log('Philosophos finished an insight.')
             }
 
-            // setTimeout(this.execute.bind(this), this.agent_interval_seconds);
         } catch (ex) {
             this.logger.error(ex);
         }

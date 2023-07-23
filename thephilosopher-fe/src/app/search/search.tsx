@@ -1,4 +1,5 @@
 'use client';
+
 import PhButton from "@/components/ph-button";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
@@ -18,9 +19,8 @@ export interface SearchEmbeddingsResponseDto {
     similarity: number
 }
 
-
 export default function Search() {
-    
+
     const router = useRouter()
 
     const searchParams = useSearchParams()
@@ -48,7 +48,7 @@ export default function Search() {
     })
 
     useEffect(() => {
-        if(queryText) {
+        if (queryText) {
             refetch()
         }
     }, [])
@@ -65,21 +65,19 @@ export default function Search() {
         <PhButton onClick={() => {
             router.push('/')
         }}>Back to Insights</PhButton>
-        <div className="text-gray-100/80 text-md">
+        <p className="text-gray-100/80 text-md">
             Search for insights using semantic meaning
-        </div>
-        <div className="join w-8/12">
-            <input type="text" placeholder="What is the meaning of life?" className="text-gray-100/80 input rounded-l-full input-bordered join-item w-8/12 bg-amber-50/10" onKeyDown={(ev) => {
+        </p>
+        <div className="join w-8/12 place-content-center">
+            <input type="text" placeholder="Example: What is the meaning of life?" className="text-gray-100/80 input rounded-l-full input-bordered w-full join-item bg-amber-50/10" onKeyDown={(ev) => {
                 if (ev.key === 'Enter') {
                     onSearchSubmit();
                 }
             }} onChange={(e) => {
                 if (e.target.value !== '')
-                    router.replace(`/search/?text=${e.target.value}`, {
-                        scroll: false
-                    })
+                    router.replace(`/search/?text=${e.target.value}`, { scroll: false })
                 else
-                    router.replace('/search', {scroll: false})
+                    router.replace('/search', { scroll: false })
                 setSearch(e.target.value)
             }} />
             <button className="btn join-item rounded-r-full bg-amber-50/10 hover:bg-amber-50/40" onClick={onSearchSubmit}>Search</button>
