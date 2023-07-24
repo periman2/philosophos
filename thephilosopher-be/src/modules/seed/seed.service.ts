@@ -28,7 +28,7 @@ export class SeedService {
             this.logger.log('Starting deletion')
 
             await client.from('text_resources').delete().lt('created_at', new Date().toISOString())
-            await client.from('insights').delete().lt('created_at', new Date().toISOString()) 
+            await client.from('insights').delete().lt('created_at', new Date().toISOString())
             await client.from('embeddings').delete().lt('created_at', new Date().toISOString())
 
             this.logger.log('Finishing deletion')
@@ -94,21 +94,9 @@ export class SeedService {
                     url: b.formats['text/html']
                 }, { onConflict: 'title' }).select('id').single().throwOnError()
 
-                // TODO: fix the auto-delete when needed logic.
-                // this.logger.log('deleting previous segments');
-                // //delete all segments of this book because we will re-write them.
-                // await client.rpc('delete_embeddings_by_text_resource_id', { p_text_resource_id: text_resource.id }).throwOnError()
-                // await client.from('text_resource_segments').delete().eq('text_resource_id', text_resource.id).throwOnError()
-                const local_book_file = `/Users/user/Downloads/books/${b.title}.txt`;
-
                 let content = '';
 
-                // if (fs.existsSync(local_book_file)) {
-                //     content = fs.readFileSync(local_book_file, 'utf-8')
-                // } else {
-                    content = (await axios.get(b.formats['text/plain'], { responseType: 'text' })).data
-                // }
-
+                content = (await axios.get(b.formats['text/plain'], { responseType: 'text' })).data
                 const segments = await this.langchainChatGPTService.splitLargeText(content, 1500, 500)
 
                 const embeddings: number[][] = []

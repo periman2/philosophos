@@ -8,7 +8,6 @@ import { DBTableRow } from "src/types/db";
 import { Timeout } from "@nestjs/schedule";
 import { AgentSettings } from "./interfaces/agent.settings.interface";
 
-
 @Injectable()
 export class AgentService {
 
@@ -21,13 +20,7 @@ export class AgentService {
     private readonly logger = new Logger(AgentService.name);
     private readonly agent_interval_seconds = parseInt(process.env.AGENT_INTERVAL_SECONDS);
 
-
-    // @Timeout(1000) //start this method a second after the server is started
-    async repeatExecution() {
-        await this.execute();
-        setTimeout(this.execute.bind(this), this.agent_interval_seconds);
-    }
-
+    @Timeout(1000) //start this method a second after the server is started
     async execute() {
         try {
 
@@ -109,7 +102,6 @@ export class AgentService {
                     const new_strategy = await this.changeStrategy(current_goal, dynamic_settings);
 
                     this.logger.log('Philosophos decides to change strategy now.')
-                    this.logger.log('new_strategy: ', new_strategy)
 
                     const new_settings: AgentSettings = {
                         ...dynamic_settings,
@@ -124,6 +116,7 @@ export class AgentService {
                         settings_dynamic: { ...new_settings }
                     }).eq('id', current_goal.goal_settings.id).throwOnError()
                 } else {
+
                     const new_settings: AgentSettings = {
                         ...dynamic_settings,
                         ...{
@@ -179,6 +172,7 @@ export class AgentService {
                 this.logger.log('Philosophos finished an insight.')
             }
 
+            setTimeout(this.execute.bind(this), this.agent_interval_seconds);
         } catch (ex) {
             this.logger.error(ex);
         }
@@ -196,6 +190,9 @@ export class AgentService {
         const { text: new_strategy } = await change_strategy_chain.call({
             goal_description: `${current_goal.description}\n${settings.strategy}`
         })
+
+        if (!new_strategy)
+            throw new Error('Could not get result whilst running the change_strategy_chain')
 
         return new_strategy
 

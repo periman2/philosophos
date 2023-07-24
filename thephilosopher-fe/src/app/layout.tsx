@@ -8,7 +8,7 @@ import cn from 'classnames'
 const nanum = Nanum_Myeongjo({ weight: "400", subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'The Philosopher'
+  title: 'Philosophos'
 }
 
 export default function RootLayout({

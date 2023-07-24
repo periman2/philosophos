@@ -98,7 +98,7 @@ export default function Insights() {
                             {goal?.description}
                         </p>
                         <p>
-                            {(goal?.goal_settings as any)?.settings_base?.strategy}
+                            {(goal?.goal_settings as any)?.settings_dynamic?.strategy}
                         </p>
                     </div>
                     <div className="modal-action">
