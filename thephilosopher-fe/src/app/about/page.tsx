@@ -33,6 +33,7 @@ export default function Page() {
         <p>
             For more information contact me at <a className="text-white" href="mailto:mrancientscript@protonmail.com">mrancientscript@protonmail.com</a>
         </p>
-        <GitHubButton href="https://github.com/periman2/thephilosopher"></GitHubButton>
+        <br />
+        <GitHubButton href="https://github.com/periman2/philosophos"></GitHubButton>
     </div >
 }
