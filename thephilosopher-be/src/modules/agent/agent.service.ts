@@ -20,7 +20,7 @@ export class AgentService {
     private readonly logger = new Logger(AgentService.name);
     private readonly agent_interval_seconds = parseInt(process.env.AGENT_INTERVAL_SECONDS);
 
-    @Timeout(1000) //start this method a second after the server is started
+    // @Timeout(1000) //start this method a second after the server is started
     async execute() {
         try {
 

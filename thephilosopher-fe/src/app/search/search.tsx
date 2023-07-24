@@ -4,7 +4,7 @@ import PhButton from "@/components/ph-button";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export interface SearchEmbeddingsDto {
     text: string
@@ -57,6 +57,7 @@ export default function Search() {
 
     const onSearchSubmit = () => {
         if (search && search !== '') {
+            router.replace(`/search/?text=${search}`, { scroll: false })
             refetch();
         }
     }
@@ -69,15 +70,11 @@ export default function Search() {
             Search for insights using semantic meaning
         </p>
         <div className="join w-8/12 place-content-center">
-            <input type="text" placeholder="Example: What is the meaning of life?" className="text-gray-100/80 input rounded-l-full input-bordered w-full join-item bg-amber-50/10" onKeyDown={(ev) => {
+            <input value={search} type="text" placeholder="Example: What is the meaning of life?" className="text-gray-100/80 input rounded-l-full input-bordered w-full join-item bg-amber-50/10" onKeyDown={(ev) => {
                 if (ev.key === 'Enter') {
                     onSearchSubmit();
                 }
             }} onChange={(e) => {
-                if (e.target.value !== '')
-                    router.replace(`/search/?text=${e.target.value}`, { scroll: false })
-                else
-                    router.replace('/search', { scroll: false })
                 setSearch(e.target.value)
             }} />
             <button className="btn join-item rounded-r-full bg-amber-50/10 hover:bg-amber-50/40" onClick={onSearchSubmit}>Search</button>

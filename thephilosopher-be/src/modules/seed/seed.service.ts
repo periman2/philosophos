@@ -87,6 +87,8 @@ export class SeedService {
                 const b = all_books[i]
                 const author_names = b.authors.map(a => a.name).join(", ")
 
+                this.logger.log(`Parsing book : ${b.title}`)
+
                 const { data: text_resource, error } = await client.from('text_resources').upsert({
                     author_names,
                     gutendex_id: b.id,
@@ -128,23 +130,29 @@ export class SeedService {
 
                 await chunkArray(segments, db_save_increment, async (segment, si) => {
 
-                    const chunk_segments_to_create = segments_to_create.slice(si, si + db_save_increment)
-                    const chunk_embeddings_to_create = embeddings_to_create.slice(si, si + db_save_increment)
+                    try {
 
-                    this.logger.log("Saving text_resource_segments si: " + chunk_segments_to_create.length)
-                    const { data: text_resource_segments } = await client.from('text_resource_segments').insert(chunk_segments_to_create).select('id').throwOnError()
+                        const chunk_segments_to_create = segments_to_create.slice(si, si + db_save_increment)
+                        const chunk_embeddings_to_create = embeddings_to_create.slice(si, si + db_save_increment)
 
-                    this.logger.log("Saving embeddings si: " + chunk_embeddings_to_create.length)
-                    const { data: db_embeddigns } = await client.from('embeddings').insert(chunk_embeddings_to_create).select('id').throwOnError()
+                        this.logger.log("Saving text_resource_segments si: " + chunk_segments_to_create.length)
+                        const { data: text_resource_segments } = await client.from('text_resource_segments').insert(chunk_segments_to_create).select('id').throwOnError()
 
-                    const text_resource_segment_embeddings_to_create: DBTableInsert<'text_resource_segment_embeddings'>[] = db_embeddigns.map((e, i) => ({
-                        embedding_id: db_embeddigns[i]?.id,
-                        text_resource_segment_id: text_resource_segments[i]?.id
-                    }))
+                        this.logger.log("Saving embeddings si: " + chunk_embeddings_to_create.length)
+                        const { data: db_embeddigns } = await client.from('embeddings').insert(chunk_embeddings_to_create).select('id').throwOnError()
 
-                    this.logger.log("Saving text_resource_segment_embeddings si: " + text_resource_segment_embeddings_to_create.length)
-                    await client.from('text_resource_segment_embeddings').insert(text_resource_segment_embeddings_to_create).throwOnError()
+                        const text_resource_segment_embeddings_to_create: DBTableInsert<'text_resource_segment_embeddings'>[] = db_embeddigns.map((e, i) => ({
+                            embedding_id: db_embeddigns[i]?.id,
+                            text_resource_segment_id: text_resource_segments[i]?.id
+                        }))
 
+                        this.logger.log("Saving text_resource_segment_embeddings si: " + text_resource_segment_embeddings_to_create.length)
+                        await client.from('text_resource_segment_embeddings').insert(text_resource_segment_embeddings_to_create).throwOnError()
+
+                    } catch (ex) {
+                        this.logger.error(ex)
+                        await wait(3000)
+                    }
                 })
             }
 
