@@ -20,7 +20,7 @@ export class AgentService {
     private readonly logger = new Logger(AgentService.name);
     private readonly agent_interval_seconds = parseInt(process.env.AGENT_INTERVAL_SECONDS);
 
-    // @Timeout(1000) //start this method a second after the server is started
+    @Timeout(1000) //start this method a second after the server is started
     async execute() {
         try {
 
@@ -68,7 +68,7 @@ export class AgentService {
             }
 
             const results = await this.searchResources(client, inquiry_resources_prompt, dynamic_settings.organize_ideas_similarity, dynamic_settings.organize_ideas_match_count)
-
+            
             const { data: text_resource_segments } = await client.from('text_resource_segments').select('*, text_resources(id)').in('id', results.map(r => r.id))
 
             const ideas_to_organize = [
